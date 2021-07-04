@@ -1,41 +1,41 @@
 #! usr/bin/env python3
 import praw
-import pandas as pd
-import datetime as dt
+import urllib
+import os
+
+sub = input("What subreddit would you like to search for images of corgis? ")
+
 
 reddit = praw.Reddit(client_id='NvEWb8zjLdLZWw', \
                      client_secret='WjMmIJ2HXVLJSjUpbxSWxNWVeIaffg', \
-                     user_agent='corgibot', \
-                     username='corgibotter', \
-                     password='swannuggets')
+                     user_agent='corgibot')
 
-subreddit = reddit.subreddit('dogs')     
+cwd = os.getcwd()
+newpath = cwd + '/images'
+
+if not os.path.exists(newpath):
+    os.makedirs(newpath)
+
+subreddit = reddit.subreddit(sub)
 
 search_subreddit = subreddit.search("corgi")
 
-topics_dict = { "title": [], \
-                "score": [], \
-                "id": [], "url":[], \
-                "comms_num": [], \
-                "created": [], \
-                "body": [] }
+print("Searching for images of corgis in /r/" + sub)
 
 for submission in search_subreddit:
-    topics_dict["title"].append(submission.title)
-    topics_dict["score"].append(submission.score)
-    topics_dict["id"].append(submission.id)
-    topics_dict["url"].append(submission.url)
-    topics_dict["comms_num"].append(submission.num_comments)
-    topics_dict["created"].append(submission.created)
-    topics_dict["body"].append(submission.selftext)
+    try:
+        if 'http://imgur.com/' in submission.url:
+            url = submission.url + '.jpg'
+            print ('> * ' + url)
+            fullfilename = os.path.join(newpath, submission.url+ '.jpg')
+            urllib.urlretrieve(submission.url, fullfilename)
+        
+        else:
+            fullfilename = os.path.join(newpath, submission.id+ '.jpg')
 
-topics_data = pd.DataFrame(topics_dict)
+            urllib.urlretrieve(submission.url, fullfilename)
+            print ('> ' + submission.url)
 
-def get_date(created):
-    return dt.datetime.fromtimestamp(created)
+    except:
+            pass
 
-_timestamp = topics_data["created"].apply(get_date)
-
-topics_data = topics_data.assign(timestamp = _timestamp)
-
-topics_data.to_csv('FILENAME.csv', index=False) 
